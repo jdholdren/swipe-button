@@ -273,15 +273,7 @@ public class SwipeButton extends RelativeLayout {
 
                         return true;
                     case MotionEvent.ACTION_UP:
-                        if (active) {
-                            collapseButton();
-                        } else {
-                            if (swipeButtonInner.getX() + swipeButtonInner.getWidth() > getWidth() * 0.85) {
-                                expandButton();
-                            } else {
-                                moveButtonBack();
-                            }
-                        }
+                        moveButtonBack();
 
                         return true;
                 }
@@ -351,7 +343,7 @@ public class SwipeButton extends RelativeLayout {
         ObjectAnimator objectAnimator = ObjectAnimator.ofFloat(
                 centerText, "alpha", 1);
 
-        positionAnimator.setDuration(200);
+        positionAnimator.setDuration(400);
 
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(objectAnimator, positionAnimator);
