@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -26,7 +27,8 @@ import android.widget.TextView;
  */
 
 public class SwipeButton extends RelativeLayout {
-    
+
+    private static final String LOG_TAG = SwipeButton.class.getSimpleName();
 
     private ImageView swipeButtonInner;
     private float initialX;
@@ -243,10 +245,18 @@ public class SwipeButton extends RelativeLayout {
         setOnTouchListener(getButtonTouchListener());
     }
 
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        return super.onInterceptTouchEvent(ev);
+    }
+
     private OnTouchListener getButtonTouchListener() {
         return new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+
+                Log.v(LOG_TAG, "Action: " + event.getAction() + ", ");
+
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         return !TouchUtils.isTouchOutsideInitialPosition(event, swipeButtonInner);
