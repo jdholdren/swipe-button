@@ -11,12 +11,14 @@ import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -27,8 +29,6 @@ import android.widget.TextView;
  */
 
 public class SwipeButton extends RelativeLayout {
-
-    private static final String LOG_TAG = SwipeButton.class.getSimpleName();
 
     private ImageView swipeButtonInner;
     private float initialX;
@@ -43,6 +43,10 @@ public class SwipeButton extends RelativeLayout {
 
     private static final int ENABLED = 0;
     private static final int DISABLED = 1;
+
+    private NestedScrollView parentScroll;
+
+    private boolean hasScrollInit = false;
 
     public SwipeButton(Context context) {
         super(context);
@@ -241,64 +245,79 @@ public class SwipeButton extends RelativeLayout {
 
             typedArray.recycle();
         }
+    }
 
-        setOnTouchListener(getButtonTouchListener());
+    private NestedScrollView getNSVParent() {
+        ViewParent parent = this.getParent();
+
+        while (parent != null) {
+            if (parent instanceof  NestedScrollView) {
+                return (NestedScrollView) parent;
+            }
+
+            parent = parent.getParent();
+        }
+
+        return null;
+    }
+
+    private void initScrollParent() {
+        if (!this.hasScrollInit) {
+            this.parentScroll = this.getNSVParent();
+            this.hasScrollInit = true;
+        }
     }
 
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
-        return super.onInterceptTouchEvent(ev);
-    }
+    public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
 
-    private OnTouchListener getButtonTouchListener() {
-        return new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+        this.initScrollParent();
 
-                Log.v(LOG_TAG, "Action: " + event.getAction() + ", ");
-
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        return !TouchUtils.isTouchOutsideInitialPosition(event, swipeButtonInner);
-                    case MotionEvent.ACTION_MOVE:
-                        if (initialX == 0) {
-                            initialX = swipeButtonInner.getX();
-                        }
-
-                        if (event.getX() > initialX + swipeButtonInner.getWidth() / 2 &&
-                                event.getX() + swipeButtonInner.getWidth() / 2 < getWidth()) {
-                            swipeButtonInner.setX(event.getX() - swipeButtonInner.getWidth() / 2);
-                            centerText.setAlpha(1 - 1.3f * (swipeButtonInner.getX() + swipeButtonInner.getWidth()) / getWidth());
-                        }
-
-                        if (event.getX() + swipeButtonInner.getWidth() / 2 > getWidth() &&
-                                swipeButtonInner.getX() + swipeButtonInner.getWidth() / 2 < getWidth()) {
-                            swipeButtonInner.setX(getWidth() - swipeButtonInner.getWidth());
-                        }
-
-                        if (event.getX() < swipeButtonInner.getWidth() / 2 &&
-                                swipeButtonInner.getX() > 0) {
-                            swipeButtonInner.setX(0);
-                        }
-
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        if (active) {
-                            collapseButton();
-                        } else {
-                            if (swipeButtonInner.getX() + swipeButtonInner.getWidth() > getWidth() * 0.85) {
-                                expandButton();
-                            } else {
-                                moveButtonBack();
-                            }
-                        }
-
-                        return true;
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                return !TouchUtils.isTouchOutsideInitialPosition(event, swipeButtonInner);
+            case MotionEvent.ACTION_MOVE:
+                if (initialX == 0) {
+                    initialX = swipeButtonInner.getX();
                 }
 
-                return false;
-            }
-        };
+                if (this.parentScroll != null) {
+                    this.parentScroll.requestDisallowInterceptTouchEvent(true);
+                }
+
+                if (event.getX() > initialX + swipeButtonInner.getWidth() / 2 &&
+                        event.getX() + swipeButtonInner.getWidth() / 2 < getWidth()) {
+                    swipeButtonInner.setX(event.getX() - swipeButtonInner.getWidth() / 2);
+                    centerText.setAlpha(1 - 1.3f * (swipeButtonInner.getX() + swipeButtonInner.getWidth()) / getWidth());
+                }
+
+                if (event.getX() + swipeButtonInner.getWidth() / 2 > getWidth() &&
+                        swipeButtonInner.getX() + swipeButtonInner.getWidth() / 2 < getWidth()) {
+                    swipeButtonInner.setX(getWidth() - swipeButtonInner.getWidth());
+                }
+
+                if (event.getX() < swipeButtonInner.getWidth() / 2 &&
+                        swipeButtonInner.getX() > 0) {
+                    swipeButtonInner.setX(0);
+                }
+
+                return true;
+            case MotionEvent.ACTION_UP:
+                if (active) {
+                    collapseButton();
+                } else {
+                    if (swipeButtonInner.getX() + swipeButtonInner.getWidth() > getWidth() * 0.85) {
+                        expandButton();
+                    } else {
+                        moveButtonBack();
+                    }
+                }
+
+                return true;
+        }
+
+        return false;
     }
 
     private void expandButton() {

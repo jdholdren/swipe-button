@@ -1,5 +1,6 @@
 package com.ebanx.swipebtn;
 
+import android.view.DragEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
